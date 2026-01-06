@@ -30,6 +30,9 @@ export default function LoginPage() {
             localStorage.setItem('token', data.token);
             localStorage.setItem('email', data.email);
 
+            // Notify other components about the login change
+            window.dispatchEvent(new Event('auth-change'));
+
             // Redirect to dashboard or home
             if (email.includes('admin')) {
                 router.push('/dashboard');

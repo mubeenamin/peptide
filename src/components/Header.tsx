@@ -8,9 +8,22 @@ export default function Header() {
     const [isLoggedIn, setIsLoggedIn] = useState(false);
 
     useEffect(() => {
-        // Check for token on mount
-        const token = localStorage.getItem('token');
-        setIsLoggedIn(!!token);
+        const checkAuth = () => {
+            const token = localStorage.getItem('token');
+            setIsLoggedIn(!!token);
+        };
+
+        checkAuth();
+
+        // Listen for standard storage events (across tabs)
+        window.addEventListener('storage', checkAuth);
+        // Listen for our custom event (same tab)
+        window.addEventListener('auth-change', checkAuth);
+
+        return () => {
+            window.removeEventListener('storage', checkAuth);
+            window.removeEventListener('auth-change', checkAuth);
+        };
     }, []);
 
     const handleLogout = () => {
