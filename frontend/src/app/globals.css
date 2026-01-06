@@ -1,0 +1,56 @@
+/* Update variables for the red dark theme */
+:root {
+  --background: #5a0000;
+  /* Deep red base */
+  --foreground: #ffffff;
+  --heading-color: #ffffff;
+
+  --primary: #ffffff;
+  --primary-hover: #f0f0f0;
+
+  --card-bg: rgba(255, 255, 255, 0.1);
+  /* Glassmorphism */
+  --card-border: rgba(255, 255, 255, 0.2);
+
+  --font-sans: 'Inter', sans-serif;
+  font-family: var(--font-sans);
+}
+
+body {
+  background-image: url('/dna_background.png');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  background-repeat: no-repeat;
+  color: var(--foreground);
+}
+
+.container {
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.main-layout {
+  display: flex;
+  gap: 30px;
+  padding-top: 20px;
+}
+
+.content-area {
+  flex: 1;
+}
+
+/* Scrollbar styling for aesthetic */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #330000;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #FF4444;
+  border-radius: 4px;
+}

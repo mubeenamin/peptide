@@ -1,0 +1,148 @@
+.header {
+    background-color: transparent;
+    /* Transparent header on the red background */
+    padding: 1.5rem 0;
+    position: relative;
+    z-index: 100;
+}
+
+.inner {
+    max-width: 1440px;
+    margin: 0 auto;
+    padding: 0 20px;
+    display: flex;
+    flex-direction: column;
+    /* Stack logo and pills */
+    gap: 1.5rem;
+}
+
+@media (min-width: 768px) {
+    .inner {
+        flex-direction: row;
+        justify-content: space-between;
+        align-items: center;
+    }
+}
+
+.logo {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #fff;
+    letter-spacing: -0.5px;
+    text-decoration: none;
+}
+
+/* Right Action Area */
+.actions {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    /* Center on mobile */
+    gap: 15px;
+    width: 100%;
+}
+
+@media (min-width: 768px) {
+    .actions {
+        align-items: flex-end;
+    }
+}
+
+.searchBar {
+    position: relative;
+    margin-right: 20px;
+    display: flex;
+    align-items: center;
+}
+
+.searchInput {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 20px;
+    padding: 8px 35px 8px 15px;
+    color: #fff;
+    font-size: 0.9rem;
+    outline: none;
+    width: 200px;
+    transition: all 0.3s ease;
+}
+
+.searchInput:focus {
+    background: rgba(255, 255, 255, 0.2);
+    width: 250px;
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
+.searchIcon {
+    position: absolute;
+    right: 12px;
+    font-size: 0.8rem;
+    pointer-events: none;
+    opacity: 0.7;
+}
+
+.topButtons {
+    display: flex;
+    gap: 15px;
+    align-items: center;
+}
+
+.navBtn {
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: #fff;
+    padding: 8px 20px;
+    border-radius: 8px;
+    /* Slightly boxier than pills for differentiation */
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-decoration: none;
+    transition: all 0.2s ease;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.navBtn:hover {
+    background: #fff;
+    color: #8B0000;
+    border-color: #fff;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
+/* Pills Container */
+.pillsNav {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    justify-content: center;
+    /* Center on mobile */
+}
+
+@media (min-width: 768px) {
+    .pillsNav {
+        justify-content: flex-end;
+    }
+}
+
+.pill {
+    backdrop-filter: blur(5px);
+    background: rgba(255, 255, 255, 0.08);
+    /* Slightly more transparent */
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: rgba(255, 255, 255, 0.9);
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    text-decoration: none;
+    transition: all 0.2s;
+    white-space: nowrap;
+}
+
+.pill:hover {
+    background: rgba(255, 255, 255, 0.2);
+    color: #fff;
+    border-color: rgba(255, 255, 255, 0.5);
+}
