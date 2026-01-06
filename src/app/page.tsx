@@ -2,6 +2,8 @@ import ProductCard from '@/components/ProductCard';
 import styles from './page.module.css';
 import { Product } from '@/types';
 
+export const dynamic = 'force-dynamic';
+
 const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
 
 async function getProducts(): Promise<Product[] | null> {
