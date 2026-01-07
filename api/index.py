@@ -12,9 +12,17 @@ api_router = APIRouter()
 
 # ... (Models and Database remain same, just using router below) ...
 
+# Get the directory of the current file
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+STATIC_DIR = os.path.join(BASE_DIR, "static")
+
+# Ensure the static directory exists to prevent Vercel from crashing
+if not os.path.exists(STATIC_DIR):
+    os.makedirs(STATIC_DIR, exist_ok=True)
+
 # Mount static files for images
-app.mount("/api/static", StaticFiles(directory="static"), name="static_api")
-app.mount("/static", StaticFiles(directory="static"), name="static")
+app.mount("/api/static", StaticFiles(directory=STATIC_DIR), name="static_api")
+app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 # CORS for Frontend
 app.add_middleware(

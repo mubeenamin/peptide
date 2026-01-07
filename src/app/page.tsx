@@ -7,15 +7,12 @@ export const dynamic = 'force-dynamic';
 async function getProducts(): Promise<Product[] | null> {
     const baseUrl = process.env.NEXT_PUBLIC_API_URL;
 
-    // Server-side fetching logic
-    if (typeof window === 'undefined') {
-        if (!baseUrl) {
-            console.warn("NEXT_PUBLIC_API_URL not set. Static/SSR fetch might skip backend data.");
-            return null;
-        }
+    let normalizedBase = baseUrl;
+    if (normalizedBase && !normalizedBase.startsWith('http')) {
+        normalizedBase = `https://${normalizedBase}`;
     }
 
-    const finalUrl = baseUrl ? `${baseUrl}/products` : '/api/products';
+    const finalUrl = normalizedBase ? `${normalizedBase}/products` : '/api/products';
 
     try {
         const res = await fetch(finalUrl, { cache: 'no-store' });
