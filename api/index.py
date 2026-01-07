@@ -16,9 +16,12 @@ api_router = APIRouter()
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 STATIC_DIR = os.path.join(BASE_DIR, "static")
 
-# Ensure the static directory exists to prevent Vercel from crashing
-if not os.path.exists(STATIC_DIR):
-    os.makedirs(STATIC_DIR, exist_ok=True)
+# Ensure the static directory exists (if possible, since Vercel is read-only)
+try:
+    if not os.path.exists(STATIC_DIR):
+        os.makedirs(STATIC_DIR, exist_ok=True)
+except Exception as e:
+    print(f"Warning: Could not create static directory: {e}")
 
 # Mount static files for images
 app.mount("/api/static", StaticFiles(directory=STATIC_DIR), name="static_api")
@@ -221,14 +224,23 @@ async def create_product(
     image_url = "/placeholder-peptide.jpg" # Default
     
     if image:
-        # Save the uploaded file
-        file_location = f"static/images/{image.filename}"
-        os.makedirs(os.path.dirname(file_location), exist_ok=True)
-        with open(file_location, "wb+") as file_object:
-            shutil.copyfileobj(image.file, file_object)
-        
-        # Use a relative path /api/static/... so it works both locally and on Vercel
-        image_url = f"/api/{file_location}"
+        try:
+            # Save the uploaded file
+            # Note: This will likely fail on Vercel due to read-only filesystem
+            # In a real app, use S3/Cloudinary/etc.
+            images_dir = os.path.join(STATIC_DIR, "images")
+            os.makedirs(images_dir, exist_ok=True)
+            
+            file_path = os.path.join(images_dir, image.filename)
+            with open(file_path, "wb+") as file_object:
+                shutil.copyfileobj(image.file, file_object)
+            
+            # Use a relative path /api/static/... so it works both locally and on Vercel
+            image_url = f"/api/static/images/{image.filename}"
+        except Exception as e:
+            print(f"Error saving image: {e}")
+            # Fallback to placeholder if we can't write to disk
+            image_url = "/placeholder-peptide.jpg"
 
     new_product = {
         "id": new_id,
