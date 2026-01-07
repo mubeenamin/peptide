@@ -4,13 +4,22 @@ import { Product } from '@/types';
 
 export const dynamic = 'force-dynamic';
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-
 async function getProducts(): Promise<Product[] | null> {
+    const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+
+    // Server-side fetching logic
+    if (typeof window === 'undefined') {
+        if (!baseUrl) {
+            console.warn("NEXT_PUBLIC_API_URL not set. Static/SSR fetch might skip backend data.");
+            return null;
+        }
+    }
+
+    const finalUrl = baseUrl ? `${baseUrl}/products` : '/api/products';
+
     try {
-        const res = await fetch(`${API_URL}/products`, { cache: 'no-store' });
+        const res = await fetch(finalUrl, { cache: 'no-store' });
         if (!res.ok) {
-            // Fallback or throw
             console.warn("Backend not reachable or returned error");
             return null;
         }
@@ -94,7 +103,6 @@ export default async function ShopHome() {
                     <p className={styles.subtitle}>Highest Purity US-Made Research Peptides</p>
                 </div>
                 <div>
-                    {/* Dropdown for sort could go here */}
                 </div>
             </div>
             <div className={styles.grid}>

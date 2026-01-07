@@ -60,7 +60,7 @@ export default function DashboardPage() {
                 data.append('image', imageFile);
             }
 
-            const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/products`, {
+            const res = await fetch('/api/products', {
                 method: 'POST',
                 body: data,
             });

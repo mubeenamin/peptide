@@ -64,7 +64,7 @@ export default function ProductPage() {
         };
 
         setLoading(true);
-        fetch(`${process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000'}/products`)
+        fetch('/api/products')
             .then(res => {
                 if (!res.ok) throw new Error('Backend not reachable');
                 return res.json();

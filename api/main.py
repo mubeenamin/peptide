@@ -218,8 +218,8 @@ async def create_product(
         # Since frontend uses <img src={product.image_url}>, let's give it the full backend URL 
         # or just make sure frontend prepends backend host if needed. 
         # But our current mock data has relative paths.
-        # Let's provide the full URL so it works easily.
-        image_url = f"http://localhost:8000/{file_location}"
+        # Use a relative path /api/static/... so it works both locally and on Vercel
+        image_url = f"/api/{file_location}"
 
     new_product = {
         "id": new_id,
