@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Depends, status, File, UploadFile, Form
+from fastapi import FastAPI, HTTPException, Depends, status, File, UploadFile, Form, APIRouter
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from typing import List, Optional
@@ -8,8 +8,12 @@ import shutil
 import os
 
 app = FastAPI(title="Peptide Sciences Clone API")
+api_router = APIRouter()
+
+# ... (Models and Database remain same, just using router below) ...
 
 # Mount static files for images
+app.mount("/api/static", StaticFiles(directory="static"), name="static_api")
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # CORS for Frontend
@@ -182,15 +186,15 @@ class CartItem(BaseModel):
 
 # --- Routes ---
 
-@app.get("/")
+@api_router.get("/")
 def read_root():
     return {"message": "Peptide Sciences Clone API is running"}
 
-@app.get("/products", response_model=List[Product])
+@api_router.get("/products", response_model=List[Product])
 def get_products():
     return PRODUCTS
 
-@app.post("/products", response_model=Product)
+@api_router.post("/products", response_model=Product)
 async def create_product(
     name: str = Form(...),
     price: float = Form(...),
@@ -211,13 +215,10 @@ async def create_product(
     if image:
         # Save the uploaded file
         file_location = f"static/images/{image.filename}"
+        os.makedirs(os.path.dirname(file_location), exist_ok=True)
         with open(file_location, "wb+") as file_object:
             shutil.copyfileobj(image.file, file_object)
         
-        # We need the full URL or relative path handled by frontend. 
-        # Since frontend uses <img src={product.image_url}>, let's give it the full backend URL 
-        # or just make sure frontend prepends backend host if needed. 
-        # But our current mock data has relative paths.
         # Use a relative path /api/static/... so it works both locally and on Vercel
         image_url = f"/api/{file_location}"
 
@@ -238,31 +239,23 @@ async def create_product(
     PRODUCTS.append(new_product)
     return new_product
 
-@app.get("/products/{product_id}", response_model=Product)
+@api_router.get("/products/{product_id}", response_model=Product)
 def get_product(product_id: int):
     for p in PRODUCTS:
         if p["id"] == product_id:
             return p
     raise HTTPException(status_code=404, detail="Product not found")
 
-@app.post("/login")
+@api_router.post("/login")
 def login(creds: LoginRequest):
     # Mock Auth
     if creds.email in USERS_DB and USERS_DB[creds.email] == creds.password:
         return {"token": "fake-jwt-token-123", "email": creds.email}
     raise HTTPException(status_code=401, detail="Invalid credentials")
 
-# Future AI Agent endpoint example
-@app.post("/agent/query")
-def agent_query(query: str):
-    """
-    Placeholder for future AI agent that interacts with the store.
-    """
-    # Simple logic to find a product mentioned in query
-    results = [p for p in PRODUCTS if p["name"].lower() in query.lower()]
-    if results:
-        return {"response": f"I found {len(results)} products matching your query.", "data": results}
-    return {"response": "I couldn't find any products matching that description."}
+# Include the router twice to handle both prefixed and non-prefixed requests
+app.include_router(api_router, prefix="/api")
+app.include_router(api_router)
 
 if __name__ == "__main__":
-    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=True)
+    uvicorn.run("index:app", host="0.0.0.0", port=8000, reload=True)
