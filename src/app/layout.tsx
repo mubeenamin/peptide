@@ -1,6 +1,5 @@
 import './globals.css';
 import Header from '@/components/Header';
-import Sidebar from '@/components/Sidebar';
 import { ReactNode } from 'react';
 import { Toaster } from 'react-hot-toast';
 
@@ -19,12 +18,9 @@ export default function RootLayout({ children }: { children: ReactNode }) {
       </head>
       <body>
         <Header />
-        <div className="container main-layout">
-          <Sidebar />
-          <main className="content-area">
-            {children}
-          </main>
-        </div>
+        <main className="container">
+          {children}
+        </main>
         <Toaster position="top-right" />
       </body>
     </html>

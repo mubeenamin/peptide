@@ -26,17 +26,19 @@ export default function ProductCard({ product }: ProductCardProps) {
                 <Link href={`/product/${product.id}`} className={styles.name}>
                     {product.name}
                 </Link>
+                <div className={styles.category}>{product.category}</div>
+                <div className={styles.price}>${product.price.toFixed(2)}</div>
 
                 <div className={styles.actions}>
-                    <Link href={`/product/${product.id}`} className={styles.learnMoreBtn}>
-                        Learn More
-                    </Link>
                     <button
                         className={styles.addBtn}
                         onClick={() => alert(`Added ${product.name} to cart!`)}
                     >
-                        Add to Cart - ${product.price.toFixed(2)}
+                        Add to Cart
                     </button>
+                    <Link href={`/product/${product.id}`} className={styles.learnMoreBtn}>
+                        Full Details
+                    </Link>
                 </div>
             </div>
         </div>

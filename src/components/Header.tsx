@@ -36,19 +36,12 @@ export default function Header() {
     return (
         <header className={styles.header}>
             <div className={styles.inner}>
-                {/* Logo Area */}
-                <Link href="/" className={styles.logo} style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-                    <div style={{
-                        width: '40px',
-                        height: '30px',
-                        background: '#D32F2F',
-                        borderRadius: '6px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center'
-                    }}>
-                        🐘
-                    </div>
+                <Link href="/" className={styles.logo}>
+                    <img
+                        src="/logo.svg"
+                        alt="Peptide Logo"
+                        className={styles.logoImage}
+                    />
                 </Link>
 
                 {/* Right Side: Navigation Actions */}
@@ -74,14 +67,6 @@ export default function Header() {
                         </Link>
                     </div>
 
-                    <nav className={styles.pillsNav}>
-                        <Link href="#" className={styles.pill}>Peptide Capsules</Link>
-                        <Link href="#" className={styles.pill}>Peptide Blends</Link>
-                        <Link href="#" className={styles.pill}>IGF-1 Proteins</Link>
-                        <Link href="#" className={styles.pill}>Melanotan Peptides</Link>
-                        <Link href="#" className={styles.pill}>Bioregulators</Link>
-                        <Link href="#" className={styles.pill}>Cosmetic Peptides</Link>
-                    </nav>
                 </div>
             </div>
         </header>

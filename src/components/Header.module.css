@@ -1,9 +1,14 @@
 .header {
-    background-color: transparent;
-    /* Transparent header on the red background */
-    padding: 1.5rem 0;
-    position: relative;
-    z-index: 100;
+    background-color: #ffffff;
+    /* Matches product card bg */
+    border-bottom: 1px solid #f0f0f0;
+    /* Matches product card border */
+    padding: 1rem 0;
+    position: sticky;
+    top: 0;
+    z-index: 1000;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03);
+    /* Matches product card shadow */
 }
 
 .inner {
@@ -12,8 +17,7 @@
     padding: 0 20px;
     display: flex;
     flex-direction: column;
-    /* Stack logo and pills */
-    gap: 1.5rem;
+    gap: 1rem;
 }
 
 @media (min-width: 768px) {
@@ -25,11 +29,15 @@
 }
 
 .logo {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: #fff;
-    letter-spacing: -0.5px;
+    display: flex;
+    align-items: center;
     text-decoration: none;
+}
+
+.logoImage {
+    height: 55px;
+    width: auto;
+    display: block;
 }
 
 /* Right Action Area */
@@ -37,30 +45,29 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    /* Center on mobile */
-    gap: 15px;
+    gap: 12px;
     width: 100%;
 }
 
 @media (min-width: 768px) {
     .actions {
         align-items: flex-end;
+        width: auto;
     }
 }
 
 .searchBar {
     position: relative;
-    margin-right: 20px;
     display: flex;
     align-items: center;
 }
 
 .searchInput {
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    background: #f5f5f5;
+    border: 1px solid #e0e0e0;
     border-radius: 20px;
     padding: 8px 35px 8px 15px;
-    color: #fff;
+    color: #333;
     font-size: 0.9rem;
     outline: none;
     width: 200px;
@@ -68,9 +75,10 @@
 }
 
 .searchInput:focus {
-    background: rgba(255, 255, 255, 0.2);
+    background: #fff;
     width: 250px;
-    border-color: rgba(255, 255, 255, 0.5);
+    border-color: var(--primary);
+    box-shadow: 0 0 0 2px rgba(211, 47, 47, 0.1);
 }
 
 .searchIcon {
@@ -78,24 +86,22 @@
     right: 12px;
     font-size: 0.8rem;
     pointer-events: none;
-    opacity: 0.7;
+    opacity: 0.5;
 }
 
 .topButtons {
     display: flex;
-    gap: 15px;
+    gap: 12px;
     align-items: center;
 }
 
 .navBtn {
-    background: rgba(255, 255, 255, 0.15);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.3);
-    color: #fff;
-    padding: 8px 20px;
-    border-radius: 8px;
-    /* Slightly boxier than pills for differentiation */
-    font-size: 0.9rem;
+    background: transparent;
+    border: 1px solid #e0e0e0;
+    color: #444;
+    padding: 6px 16px;
+    border-radius: 6px;
+    font-size: 0.85rem;
     font-weight: 600;
     text-decoration: none;
     transition: all 0.2s ease;
@@ -104,45 +110,8 @@
 }
 
 .navBtn:hover {
-    background: #fff;
-    color: #8B0000;
-    border-color: #fff;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-}
-
-/* Pills Container */
-.pillsNav {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    justify-content: center;
-    /* Center on mobile */
-}
-
-@media (min-width: 768px) {
-    .pillsNav {
-        justify-content: flex-end;
-    }
-}
-
-.pill {
-    backdrop-filter: blur(5px);
-    background: rgba(255, 255, 255, 0.08);
-    /* Slightly more transparent */
-    border: 1px solid rgba(255, 255, 255, 0.2);
-    color: rgba(255, 255, 255, 0.9);
-    padding: 6px 14px;
-    border-radius: 20px;
-    font-size: 0.8rem;
-    font-weight: 500;
-    text-decoration: none;
-    transition: all 0.2s;
-    white-space: nowrap;
-}
-
-.pill:hover {
-    background: rgba(255, 255, 255, 0.2);
+    background: var(--primary);
     color: #fff;
-    border-color: rgba(255, 255, 255, 0.5);
+    border-color: var(--primary);
+    transform: translateY(-1px);
 }
