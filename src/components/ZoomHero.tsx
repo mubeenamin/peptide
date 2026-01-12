@@ -49,11 +49,11 @@ function FrameSequenceBackground({ playbackValue }: { playbackValue: MotionValue
 
             const val = smoothPlayback.get();
 
-            // Map timeline [0.15 -> 0.85] for pure scrub
-            // 0.15 is where text fade completes.
+            // Map timeline [0.05 -> 0.85]
+            // Starts earlier ("when text little zoom")
             let phase = 0;
-            if (val > 0.15 && val < 0.85) {
-                phase = (val - 0.15) / 0.7;
+            if (val > 0.05 && val < 0.85) {
+                phase = (val - 0.05) / 0.8;
             } else if (val >= 0.85) {
                 phase = 1;
             }
@@ -101,7 +101,7 @@ function FrameSequenceBackground({ playbackValue }: { playbackValue: MotionValue
     }, [images, smoothPlayback]);
 
     return (
-        <div style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden', backgroundColor: '#fff' }}>
+        <div style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden', backgroundColor: 'transparent' }}>
             <canvas
                 ref={canvasRef}
                 style={{
@@ -125,7 +125,7 @@ function FrameSequenceBackground({ playbackValue }: { playbackValue: MotionValue
                     gap: '15px'
                 }}>
                     <div className={styles.spinner}></div>
-                    <span style={{ fontSize: '0.9rem', color: '#666', fontWeight: 500 }}>Initializing Frames...</span>
+                    <span style={{ fontSize: '0.9rem', color: '#666', fontWeight: 500 }}>Initializing Experience...</span>
                 </div>
             )}
         </div>
@@ -142,37 +142,42 @@ export default function ZoomHero() {
         offset: ["start start", "end start"]
     });
 
-    // --- TRANSFORMS (Directly mapped to Scroll) ---
+    // --- TRANSFORMS ---
 
     // 1. Zoom/Fade of Hero Text (0.0 -> 0.15)
     // As user starts scrolling, the text zooms in towards the viewer and fades out simultaneously.
     const textScale = useTransform(scrollYProgress, [0, 0.15], [1, 2.5]);
     const textOpacity = useTransform(scrollYProgress, [0, 0.12], [1, 0]);
 
-    // Overlay logic (0.0 -> 0.15)
-    // White overlay fades out to reveal the frames
-    const overlayOpacity = useTransform(scrollYProgress, [0, 0.15], [0.6, 0]);
+    // Overlay: REMOVED as requested ("remove overlay color")
+    const overlayOpacity = useTransform(scrollYProgress, [0, 1], [0, 0]);
 
-    // 2. Video Scrubbing (0.0 -> 0.7)
-    // The video frame is updated based on scroll position 0 to 0.7
+    // 2. Video Scrubbing (0.05 -> 0.85)
+    // Starts "when text little zoom" (0.05) instead of waiting for full fade
     // Handled inside FrameSequenceBackground
 
     // 3. Video Layer Visibility
     // Fades out at the end (0.85 -> 0.95) to show doctors
     const videoOpacity = useTransform(scrollYProgress, [0, 0.85, 0.95], [1, 1, 0]);
 
-    // 4. Doctor Section Logic (0.85 -> 1.0)
-    // Appears as you continue scrolling past the video frames
-    const doc2Opacity = useTransform(scrollYProgress, [0.85, 0.95], [0, 1]);
-    const doc2Scale = useTransform(scrollYProgress, [0.85, 1.0], [0.85, 1]);
+    // 4. Doctor Section Logic
+    // REQUIREMENTS: Start size increase/reveal at Frame 41
+    // Timeline Frame Start: 0.05. End: 0.85. Duration: 0.8.
+    // Frame 41 Trigger: 0.05 + (0.8 * (41/51)) ~= 0.69.
 
-    const doc1X = useTransform(scrollYProgress, [0.88, 1.0], ["120%", "-30%"]);
-    const doc1Opacity = useTransform(scrollYProgress, [0.88, 1.0], [0, 1]);
+    // Doc 2 grows over the final 10 frames (41->51)
+    const doc2Opacity = useTransform(scrollYProgress, [0.69, 0.85], [0, 1]);
+    const doc2Scale = useTransform(scrollYProgress, [0.69, 0.85], [0.3, 1]);
+    const doc2Y = useTransform(scrollYProgress, [0.69, 0.85], ["15vh", "0vh"]);
+
+    // Doc 1 stops at center ("0%")
+    const doc1X = useTransform(scrollYProgress, [0.85, 1.0], ["120%", "0%"]);
+    const doc1Opacity = useTransform(scrollYProgress, [0.85, 1.0], [0, 1]);
 
     return (
         <div ref={containerRef} className={styles.heroContainer}>
             <div className={styles.stickyWrapper}>
-                {/* 1. Background Frame Layer - Driven by Scroll */}
+                {/* 1. Background Frame Layer */}
                 <motion.div
                     className={styles.imageContainer}
                     style={{ opacity: videoOpacity, zIndex: 1 }}
@@ -180,24 +185,24 @@ export default function ZoomHero() {
                     <FrameSequenceBackground playbackValue={scrollYProgress} />
                 </motion.div>
 
-                {/* 2. White Overlay - Fades with Scroll */}
+                {/* 2. Overlay (Invisible now) */}
                 <motion.div
                     className={styles.overlay}
                     style={{ opacity: overlayOpacity, backgroundColor: '#ffffff', zIndex: 2 }}
                 />
 
-                {/* 3. Hero Text - Zooms with Scroll */}
+                {/* 3. Hero Text */}
                 <motion.div
                     className={styles.content}
                     style={{ opacity: textOpacity, scale: textScale, zIndex: 10 }}
                 >
-                    <h1 className={styles.title}>Discovery Through <br /><span className={styles.highlight}>Precision</span></h1>
+                    <h1 className={styles.title}>Discovery Through <br /></h1>
                     <p className={styles.subtitle}>
                         Pioneering the next generation of peptide research with unmatched purity and scientific excellence.
                     </p>
                 </motion.div>
 
-                {/* 4. Doctor Section - Appears at end of scroll */}
+                {/* 4. Doctor Section */}
                 <div className={styles.doctorSection} style={{ zIndex: 15 }}>
                     <motion.div
                         className={styles.doc1Wrapper}
@@ -208,7 +213,7 @@ export default function ZoomHero() {
 
                     <motion.div
                         className={styles.doc2Wrapper}
-                        style={{ opacity: doc2Opacity, scale: doc2Scale }}
+                        style={{ opacity: doc2Opacity, scale: doc2Scale, y: doc2Y }}
                     >
                         <img src="/doc 2.png" alt="Chief Researcher" className={styles.doc2Image} />
                     </motion.div>
