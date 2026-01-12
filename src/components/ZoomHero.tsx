@@ -4,20 +4,25 @@ import { motion, useScroll, useTransform, MotionValue, useMotionValueEvent, useS
 import { useRef, useState, useEffect } from 'react';
 import styles from './ZoomHero.module.css';
 
-// --- Frame Sequence Background Component ---
-function FrameSequenceBackground({ playbackValue }: { playbackValue: MotionValue<number> }) {
+// --- Generic Frame Sequence Component ---
+interface FrameSequenceProps {
+    playbackValue: MotionValue<number>;
+    frameCount: number;
+    folderPath: string;
+    filePrefix: string;
+    range: [number, number]; // [start, end] of the scroll timeline
+}
+
+function FrameSequenceBackground({ playbackValue, frameCount, folderPath, filePrefix, range }: FrameSequenceProps) {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const [images, setImages] = useState<HTMLImageElement[]>([]);
     const [isLoaded, setIsLoaded] = useState(false);
 
-    // Use spring for "buttery smooth" scrubbing feel
     const smoothPlayback = useSpring(playbackValue, {
         stiffness: 150,
         damping: 30,
         mass: 0.5
     });
-
-    const frameCount = 51;
 
     useEffect(() => {
         let loadedCount = 0;
@@ -26,18 +31,18 @@ function FrameSequenceBackground({ playbackValue }: { playbackValue: MotionValue
         // Preload Frame Sequence
         for (let i = 1; i <= frameCount; i++) {
             const img = new Image();
-            const fileName = `veinsv_${String(i).padStart(3, '0')}.png`;
-            img.src = `/veinsv_frames/veinsv_frames/${fileName}`;
+            const fileName = `${filePrefix}${String(i).padStart(3, '0')}.png`;
+            img.src = `${folderPath}${fileName}`;
             img.onload = () => {
                 loadedCount++;
                 if (loadedCount >= frameCount) setIsLoaded(true);
             };
+            img.onerror = () => console.warn(`Failed to load: ${folderPath}${fileName}`);
             imgArray.push(img);
         }
         setImages(imgArray);
-    }, []);
+    }, [frameCount, folderPath, filePrefix]);
 
-    // Canvas Rendering Loop
     useEffect(() => {
         let requestRef: number;
 
@@ -48,14 +53,17 @@ function FrameSequenceBackground({ playbackValue }: { playbackValue: MotionValue
             if (!ctx) return;
 
             const val = smoothPlayback.get();
+            const [start, end] = range;
+            const duration = end - start;
 
-            // Map timeline [0.0 -> 0.85]
-            // Starts IMMEDIATELY
+            // Map global scroll value to local sequences progress (0 to 1)
             let phase = 0;
-            if (val < 0.85) {
-                phase = val / 0.85;
-            } else {
+            if (val < start) {
+                phase = 0;
+            } else if (val > end) {
                 phase = 1;
+            } else {
+                phase = (val - start) / duration;
             }
 
             const frameIndex = Math.min(
@@ -67,6 +75,8 @@ function FrameSequenceBackground({ playbackValue }: { playbackValue: MotionValue
 
             if (img && img.complete) {
                 const canvas = canvasRef.current;
+
+                // Cover logic
                 const hRatio = canvas.width / img.width;
                 const vRatio = canvas.height / img.height;
                 const ratio = Math.max(hRatio, vRatio);
@@ -98,7 +108,7 @@ function FrameSequenceBackground({ playbackValue }: { playbackValue: MotionValue
             cancelAnimationFrame(requestRef);
             window.removeEventListener('resize', handleResize);
         };
-    }, [images, smoothPlayback]);
+    }, [images, smoothPlayback, range, frameCount]);
 
     return (
         <div style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden', backgroundColor: 'transparent' }}>
@@ -116,16 +126,11 @@ function FrameSequenceBackground({ playbackValue }: { playbackValue: MotionValue
                 <div style={{
                     position: 'absolute',
                     inset: 0,
-                    backgroundColor: '#ffffff',
                     display: 'flex',
-                    flexDirection: 'column',
                     alignItems: 'center',
                     justifyContent: 'center',
-                    zIndex: 20,
-                    gap: '15px'
                 }}>
                     <div className={styles.spinner}></div>
-                    <span style={{ fontSize: '0.9rem', color: '#666', fontWeight: 500 }}>Initializing Experience...</span>
                 </div>
             )}
         </div>
@@ -135,63 +140,76 @@ function FrameSequenceBackground({ playbackValue }: { playbackValue: MotionValue
 export default function ZoomHero() {
     const containerRef = useRef<HTMLDivElement>(null);
 
-    // DIRECT SCROLL BINDING
-    // We bind directly to scrollYProgress instead of an animated value.
+    // TOTAL SCROLL TRACK: 800vh
+    // 0.0 - 0.45: Veins Sequence
+    // 0.35 - 0.55: Doctors Appear & Hold
+    // 0.55 - 0.65: Transition (Docs Fade Out, DNA Fades In)
+    // 0.65 - 1.00: DNA Sequence
     const { scrollYProgress } = useScroll({
         target: containerRef,
         offset: ["start start", "end start"]
     });
 
-    // --- TRANSFORMS ---
+    // --- 1. HERO TEXT (0 - 0.05) ---
+    const textScale = useTransform(scrollYProgress, [0, 0.05], [1, 2.5]);
+    const textOpacity = useTransform(scrollYProgress, [0, 0.04], [1, 0]);
 
-    // 1. Zoom/Fade of Hero Text (0.0 -> 0.15)
-    // As user starts scrolling, the text zooms in towards the viewer and fades out simultaneously.
-    const textScale = useTransform(scrollYProgress, [0, 0.15], [1, 2.5]);
-    const textOpacity = useTransform(scrollYProgress, [0, 0.12], [1, 0]);
+    // --- 2. VEINS SEQUENCE (0 - 0.5) ---
+    // Scrub extends to 0.5.
+    // Fades out completely by 0.6.
+    const veinsOpacity = useTransform(scrollYProgress, [0.5, 0.6], [1, 0]);
 
-    // Overlay: REMOVED as requested ("remove overlay color")
-    const overlayOpacity = useTransform(scrollYProgress, [0, 1], [0, 0]);
+    // --- 3. DOCTOR REVEAL (0.35 - 0.5) -> FADE OUT (0.5 - 0.6) ---
+    // Trigger relative to Veins scrub [0, 0.45]
+    // Previous "Frame 41" logic was ~80% of scrub. 
+    // 0.45 * 0.8 = 0.36. So we start around 0.36.
+    // Strictly fade out BEFORE DNA starts (at 0.6).
+    const doc2Opacity = useTransform(scrollYProgress, [0.36, 0.45, 0.5, 0.6], [0, 1, 1, 0]);
+    const doc2Scale = useTransform(scrollYProgress, [0.36, 0.45], [0.3, 1]);
+    const doc2Y = useTransform(scrollYProgress, [0.36, 0.45], ["15vh", "0vh"]);
 
-    // 2. Video Scrubbing (0.05 -> 0.85)
-    // Starts "when text little zoom" (0.05) instead of waiting for full fade
-    // Handled inside FrameSequenceBackground
+    const doc1X = useTransform(scrollYProgress, [0.42, 0.5], ["120%", "0%"]);
+    const doc1Opacity = useTransform(scrollYProgress, [0.42, 0.5, 0.5, 0.6], [0, 1, 1, 0]);
 
-    // 3. Video Layer Visibility
-    // Fades out at the end (0.85 -> 0.95) to show doctors
-    const videoOpacity = useTransform(scrollYProgress, [0, 0.85, 0.95], [1, 1, 0]);
+    // --- 4. DNA SEQUENCE (Scrub 0.6 - 1.0) ---
+    // Fades in just as doctors leave
+    // Fades in STRICTLY after Doctors are gone (0.6)
+    const dnaOpacity = useTransform(scrollYProgress, [0.6, 0.7], [0, 1]);
 
-    // 4. Doctor Section Logic
-    // REQUIREMENTS: Start size increase/reveal at Frame 41
-    // Timeline Frame Start: 0.0. End: 0.85. Duration: 0.85.
-    // Frame 41 Trigger: 0.0 + (0.85 * (41/51)) ~= 0.68.
-
-    // Doc 2 grows over the final 10 frames (41->51)
-    const doc2Opacity = useTransform(scrollYProgress, [0.68, 0.85], [0, 1]);
-    const doc2Scale = useTransform(scrollYProgress, [0.68, 0.85], [0.3, 1]);
-    const doc2Y = useTransform(scrollYProgress, [0.68, 0.85], ["15vh", "0vh"]);
-
-    // Doc 1 stops at center ("0%")
-    const doc1X = useTransform(scrollYProgress, [0.85, 1.0], ["120%", "0%"]);
-    const doc1Opacity = useTransform(scrollYProgress, [0.85, 1.0], [0, 1]);
 
     return (
         <div ref={containerRef} className={styles.heroContainer}>
             <div className={styles.stickyWrapper}>
-                {/* 1. Background Frame Layer */}
+
+                {/* A. Veins Layer (Bottom) */}
                 <motion.div
                     className={styles.imageContainer}
-                    style={{ opacity: videoOpacity, zIndex: 1 }}
+                    style={{ opacity: veinsOpacity, zIndex: 1 }}
                 >
-                    <FrameSequenceBackground playbackValue={scrollYProgress} />
+                    <FrameSequenceBackground
+                        playbackValue={scrollYProgress}
+                        folderPath="/veinsv_frames/veinsv_frames/"
+                        filePrefix="veinsv_"
+                        frameCount={51}
+                        range={[0, 0.5]}
+                    />
                 </motion.div>
 
-                {/* 2. Overlay (Invisible now) */}
+                {/* B. DNA Layer (Top, initially hidden) */}
                 <motion.div
-                    className={styles.overlay}
-                    style={{ opacity: overlayOpacity, backgroundColor: '#ffffff', zIndex: 2 }}
-                />
+                    className={styles.imageContainer}
+                    style={{ opacity: dnaOpacity, zIndex: 5 }}
+                >
+                    <FrameSequenceBackground
+                        playbackValue={scrollYProgress}
+                        folderPath="/dna_frames/" // Verified path
+                        filePrefix="dna_"
+                        frameCount={50}
+                        range={[0.6, 1.0]} // Scrubs during the last 40% of page
+                    />
+                </motion.div>
 
-                {/* 3. Hero Text */}
+                {/* C. Hero Text */}
                 <motion.div
                     className={styles.content}
                     style={{ opacity: textOpacity, scale: textScale, zIndex: 10 }}
@@ -202,7 +220,7 @@ export default function ZoomHero() {
                     </p>
                 </motion.div>
 
-                {/* 4. Doctor Section */}
+                {/* D. Doctor Section (Over Veins, Under DNA transition) */}
                 <div className={styles.doctorSection} style={{ zIndex: 15 }}>
                     <motion.div
                         className={styles.doc1Wrapper}
@@ -220,8 +238,8 @@ export default function ZoomHero() {
                 </div>
             </div>
 
-            {/* Extended height creates the 'track' for the scroll playback */}
-            <div style={{ height: '500vh' }} />
+            {/* Long scroll track to accommodate 2 full sequences + transitions */}
+            <div style={{ height: '800vh' }} />
         </div>
     );
 }
