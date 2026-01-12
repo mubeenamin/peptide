@@ -160,17 +160,19 @@ export default function ZoomHero() {
     // Fades out completely by 0.6.
     const veinsOpacity = useTransform(scrollYProgress, [0.5, 0.6], [1, 0]);
 
-    // --- 3. DOCTOR REVEAL (0.35 - 0.5) -> FADE OUT (0.5 - 0.6) ---
+    // --- 3. DOCTOR REVEAL (0.35 - 0.5) -> DIVE IN (0.5 - 0.6) ---
     // Trigger relative to Veins scrub [0, 0.45]
-    // Previous "Frame 41" logic was ~80% of scrub. 
-    // 0.45 * 0.8 = 0.36. So we start around 0.36.
-    // Strictly fade out BEFORE DNA starts (at 0.6).
-    const doc2Opacity = useTransform(scrollYProgress, [0.36, 0.45, 0.5, 0.6], [0, 1, 1, 0]);
-    const doc2Scale = useTransform(scrollYProgress, [0.36, 0.45], [0.3, 1]);
+    // Strictly DIVE IN (Zoom huge, no fade out)
+    // Opacity stays 1 until we are "through" it (at 0.6)
+    const doc2Opacity = useTransform(scrollYProgress, [0.36, 0.45, 0.58, 0.6], [0, 1, 1, 0]);
+    // Super Zoom (1 -> 8) to simulate diving through the image
+    const doc2Scale = useTransform(scrollYProgress, [0.36, 0.45, 0.5, 0.6], [0, 1, 1, 8]);
     const doc2Y = useTransform(scrollYProgress, [0.36, 0.45], ["15vh", "0vh"]);
 
-    const doc1X = useTransform(scrollYProgress, [0.42, 0.5], ["120%", "0%"]);
-    const doc1Opacity = useTransform(scrollYProgress, [0.42, 0.5, 0.5, 0.6], [0, 1, 1, 0]);
+    const doc1Opacity = useTransform(scrollYProgress, [0.42, 0.5, 0.58, 0.6], [0, 1, 1, 0]);
+    // Also zoom doc1 so they fly past together
+    const doc1Scale = useTransform(scrollYProgress, [0.5, 0.6], [1, 8]);
+    const doc1X = useTransform(scrollYProgress, [0.42, 0.5], ["120%", "0%"]); // Slide in, then zoom center
 
     // --- 4. DNA SEQUENCE (Scrub 0.6 - 1.0) ---
     // Fades in just as doctors leave
@@ -183,8 +185,8 @@ export default function ZoomHero() {
     // Frame 21/50 = 42%.
     // Trigger = 0.6 + (0.4 * 0.42) = 0.768.
     const productOpacity = useTransform(scrollYProgress, [0.768, 1.0], [0, 1]);
-    const productScale = useTransform(scrollYProgress, [0.768, 1.0], [0.3, 1]);
-    const productY = useTransform(scrollYProgress, [0.768, 1.0], ["15vh", "0vh"]); // Float up effect
+    const productScale = useTransform(scrollYProgress, [0.768, 1.0], [0, 1]); // Zero to Max
+    const productY = useTransform(scrollYProgress, [0.768, 1.0], ["-15vh", "-30vh"]); // Appear higher and float up
 
 
     return (
@@ -194,7 +196,11 @@ export default function ZoomHero() {
                 {/* A. Veins Layer (Bottom) */}
                 <motion.div
                     className={styles.imageContainer}
-                    style={{ opacity: veinsOpacity, zIndex: 1 }}
+                    style={{
+                        opacity: veinsOpacity,
+                        zIndex: 1,
+                        scale: useTransform(scrollYProgress, [0.5, 0.6], [1, 5]) // Dive into veins
+                    }}
                 >
                     <FrameSequenceBackground
                         playbackValue={scrollYProgress}
@@ -212,10 +218,10 @@ export default function ZoomHero() {
                 >
                     <FrameSequenceBackground
                         playbackValue={scrollYProgress}
-                        folderPath="/dna_frames/" // Verified path
+                        folderPath="/dna_frames/"
                         filePrefix="dna_"
                         frameCount={50}
-                        range={[0.6, 1.0]} // Scrubs during the last 40% of page
+                        range={[0.6, 1.0]}
                     />
                 </motion.div>
 
@@ -234,7 +240,7 @@ export default function ZoomHero() {
                 <div className={styles.doctorSection} style={{ zIndex: 15 }}>
                     <motion.div
                         className={styles.doc1Wrapper}
-                        style={{ x: doc1X, opacity: doc1Opacity }}
+                        style={{ x: doc1X, opacity: doc1Opacity, scale: doc1Scale }}
                     >
                         <img src="/doc1.png" alt="Lab Support" className={styles.doc1Image} />
                     </motion.div>
