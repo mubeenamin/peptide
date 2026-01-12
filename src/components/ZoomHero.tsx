@@ -49,12 +49,12 @@ function FrameSequenceBackground({ playbackValue }: { playbackValue: MotionValue
 
             const val = smoothPlayback.get();
 
-            // Map timeline [0.05 -> 0.85]
-            // Starts earlier ("when text little zoom")
+            // Map timeline [0.0 -> 0.85]
+            // Starts IMMEDIATELY
             let phase = 0;
-            if (val > 0.05 && val < 0.85) {
-                phase = (val - 0.05) / 0.8;
-            } else if (val >= 0.85) {
+            if (val < 0.85) {
+                phase = val / 0.85;
+            } else {
                 phase = 1;
             }
 
@@ -162,13 +162,13 @@ export default function ZoomHero() {
 
     // 4. Doctor Section Logic
     // REQUIREMENTS: Start size increase/reveal at Frame 41
-    // Timeline Frame Start: 0.05. End: 0.85. Duration: 0.8.
-    // Frame 41 Trigger: 0.05 + (0.8 * (41/51)) ~= 0.69.
+    // Timeline Frame Start: 0.0. End: 0.85. Duration: 0.85.
+    // Frame 41 Trigger: 0.0 + (0.85 * (41/51)) ~= 0.68.
 
     // Doc 2 grows over the final 10 frames (41->51)
-    const doc2Opacity = useTransform(scrollYProgress, [0.69, 0.85], [0, 1]);
-    const doc2Scale = useTransform(scrollYProgress, [0.69, 0.85], [0.3, 1]);
-    const doc2Y = useTransform(scrollYProgress, [0.69, 0.85], ["15vh", "0vh"]);
+    const doc2Opacity = useTransform(scrollYProgress, [0.68, 0.85], [0, 1]);
+    const doc2Scale = useTransform(scrollYProgress, [0.68, 0.85], [0.3, 1]);
+    const doc2Y = useTransform(scrollYProgress, [0.68, 0.85], ["15vh", "0vh"]);
 
     // Doc 1 stops at center ("0%")
     const doc1X = useTransform(scrollYProgress, [0.85, 1.0], ["120%", "0%"]);
