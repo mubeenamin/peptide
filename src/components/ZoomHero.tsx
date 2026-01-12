@@ -1,7 +1,7 @@
 'use client';
 
 import { motion, useScroll, useTransform } from 'framer-motion';
-import { useRef } from 'react';
+import { useRef, useState } from 'react';
 import styles from './ZoomHero.module.css';
 
 export default function ZoomHero() {
@@ -21,15 +21,17 @@ export default function ZoomHero() {
     const overlayOpacity = useTransform(scrollYProgress, [0, 0.15], [0.5, 0]);
 
     // --- Phase 2: "3D" Zoom into Image (15% - 80%) ---
-    // Scale: Zoom in significantly (1 -> 15)
-    const imageScale = useTransform(scrollYProgress, [0.15, 0.8], [1, 15]);
+    // Scale: Zoom in significantly (Reduced to 3x to prevent pixelation on iframe)
+    const imageScale = useTransform(scrollYProgress, [0.15, 0.8], [1, 3]);
 
-    // Blur: Add motion blur (0px -> 20px)
-    const imageBlur = useTransform(scrollYProgress, [0.15, 0.8], ["0px", "20px"]);
+    // Blur: Add motion blur (0px -> 10px) - Reduced blur
+    const imageBlur = useTransform(scrollYProgress, [0.15, 0.8], ["0px", "10px"]);
 
     // Opacity: Fade out quickly (starts at 50%, gone by 75%)
     // This creates a "white void" buffer before the next section appears
     const imageOpacity = useTransform(scrollYProgress, [0.5, 0.75], [1, 0]);
+
+    const [iframeLoaded, setIframeLoaded] = useState(false);
 
     return (
         <div ref={containerRef} className={styles.heroContainer}>
@@ -45,10 +47,25 @@ export default function ZoomHero() {
                         willChange: 'transform, filter, opacity'
                     }}
                 >
-                    <img
-                        src="/vien.png"
-                        alt="Background"
+                    {!iframeLoaded && (
+                        <div className={styles.loadingPlaceholder}>
+                            <div className={styles.spinner}></div>
+                            <span>Loading 3D Model...</span>
+                        </div>
+                    )}
+                    <iframe
+                        src="https://sketchfab.com/models/852a5dd1c3ca45adaa5fdc566c06bb5c/embed?autospin=1&autostart=1&preload=1&transparent=1&ui_animations=0&ui_infos=0&ui_stop=0&ui_inspector=0&ui_help=0&ui_settings=0&ui_vr=0&ui_fullscreen=0&ui_annotations=0"
+                        title="Bone Tissue Structure"
                         className={styles.bgImage}
+                        frameBorder="0"
+                        allow="autoplay; fullscreen; xr-spatial-tracking"
+                        style={{
+                            pointerEvents: 'none',
+                            opacity: iframeLoaded ? 1 : 0,
+                            transition: 'opacity 0.5s ease-in-out'
+                        }}
+                        loading="eager"
+                        onLoad={() => setIframeLoaded(true)}
                     />
                 </motion.div>
 
