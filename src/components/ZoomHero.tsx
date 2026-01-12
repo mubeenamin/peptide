@@ -150,9 +150,10 @@ export default function ZoomHero() {
         offset: ["start start", "end start"]
     });
 
-    // --- 1. HERO TEXT (0 - 0.05) ---
-    const textScale = useTransform(scrollYProgress, [0, 0.05], [1, 2.5]);
-    const textOpacity = useTransform(scrollYProgress, [0, 0.04], [1, 0]);
+    // --- 1. HERO TEXT (0 - 0.1) ---
+    // Start immediately, slightly longer fade to match "time of play" feel
+    const textScale = useTransform(scrollYProgress, [0, 0.1], [1, 2.5]);
+    const textOpacity = useTransform(scrollYProgress, [0, 0.08], [1, 0]);
 
     // --- 2. VEINS SEQUENCE (0 - 0.5) ---
     // Scrub extends to 0.5.
@@ -175,6 +176,15 @@ export default function ZoomHero() {
     // Fades in just as doctors leave
     // Fades in STRICTLY after Doctors are gone (0.6)
     const dnaOpacity = useTransform(scrollYProgress, [0.6, 0.7], [0, 1]);
+
+    // --- 5. DNA PRODUCT REVEAL (1.png) ---
+    // Trigger at DNA Frame 21.
+    // DNA Range: [0.6, 1.0] (Duration 0.4).
+    // Frame 21/50 = 42%.
+    // Trigger = 0.6 + (0.4 * 0.42) = 0.768.
+    const productOpacity = useTransform(scrollYProgress, [0.768, 1.0], [0, 1]);
+    const productScale = useTransform(scrollYProgress, [0.768, 1.0], [0.3, 1]);
+    const productY = useTransform(scrollYProgress, [0.768, 1.0], ["15vh", "0vh"]); // Float up effect
 
 
     return (
@@ -236,6 +246,31 @@ export default function ZoomHero() {
                         <img src="/doc 2.png" alt="Chief Researcher" className={styles.doc2Image} />
                     </motion.div>
                 </div>
+
+                {/* E. DNA Product Section (Topmost) */}
+                <motion.div
+                    className={styles.productWrapper}
+                    style={{
+                        position: 'absolute',
+                        top: 0, left: 0, width: '100%', height: '100%',
+                        display: 'flex', alignItems: 'center', justifyContent: 'center',
+                        zIndex: 20,
+                        pointerEvents: 'none'
+                    }}
+                >
+                    <motion.img
+                        src="/1.png"
+                        alt="Peptide Structure"
+                        style={{
+                            maxWidth: '40vw',
+                            maxHeight: '60vh',
+                            objectFit: 'contain',
+                            scale: productScale,
+                            opacity: productOpacity,
+                            y: productY
+                        }}
+                    />
+                </motion.div>
             </div>
 
             {/* Long scroll track to accommodate 2 full sequences + transitions */}
