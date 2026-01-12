@@ -11,6 +11,19 @@
     /* Matches product card shadow */
 }
 
+/* Homepage specific header style */
+.headerHome {
+    background-color: transparent;
+    border-bottom: none;
+    box-shadow: none;
+    position: absolute;
+    width: 100%;
+    top: 0;
+    left: 0;
+    z-index: 1000;
+    padding: 1rem 0;
+}
+
 .inner {
     max-width: 1440px;
     margin: 0 auto;

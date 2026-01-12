@@ -2,9 +2,11 @@
 
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
+import { usePathname } from 'next/navigation';
 import styles from './Header.module.css';
 
 export default function Header() {
+    const pathname = usePathname();
     const [isLoggedIn, setIsLoggedIn] = useState(false);
 
     useEffect(() => {
@@ -34,7 +36,7 @@ export default function Header() {
     };
 
     return (
-        <header className={styles.header}>
+        <header className={pathname === '/' ? styles.headerHome : styles.header}>
             <div className={styles.inner}>
                 <Link href="/" className={styles.logo}>
                     <img
@@ -44,30 +46,32 @@ export default function Header() {
                     />
                 </Link>
 
-                {/* Right Side: Navigation Actions */}
-                <div className={styles.actions}>
-                    {/* Search Bar */}
-                    <div className={styles.searchBar}>
-                        <input type="text" placeholder="Search..." className={styles.searchInput} />
-                        <span className={styles.searchIcon}>🔍</span>
-                    </div>
+                {/* Right Side: Navigation Actions - Hidden on Homepage */}
+                {pathname !== '/' && (
+                    <div className={styles.actions}>
+                        {/* Search Bar */}
+                        <div className={styles.searchBar}>
+                            <input type="text" placeholder="Search..." className={styles.searchInput} />
+                            <span className={styles.searchIcon}>🔍</span>
+                        </div>
 
-                    <div className={styles.topButtons}>
-                        {isLoggedIn ? (
-                            <button onClick={handleLogout} className={styles.navBtn} style={{ cursor: 'pointer', background: 'none', border: 'none', color: 'inherit', font: 'inherit' }}>
-                                Sign Out
-                            </button>
-                        ) : (
-                            <Link href="/login" className={styles.navBtn}>
-                                Sign In
+                        <div className={styles.topButtons}>
+                            {isLoggedIn ? (
+                                <button onClick={handleLogout} className={styles.navBtn} style={{ cursor: 'pointer', background: 'none', border: 'none', color: 'inherit', font: 'inherit' }}>
+                                    Sign Out
+                                </button>
+                            ) : (
+                                <Link href="/login" className={styles.navBtn}>
+                                    Sign In
+                                </Link>
+                            )}
+                            <Link href="/cart" className={styles.navBtn}>
+                                Cart (0)
                             </Link>
-                        )}
-                        <Link href="/cart" className={styles.navBtn}>
-                            Cart (0)
-                        </Link>
-                    </div>
+                        </div>
 
-                </div>
+                    </div>
+                )}
             </div>
         </header>
     );
