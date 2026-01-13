@@ -294,7 +294,8 @@ export default function ZoomHero() {
                         inset: 0,
                         zIndex: 1,
                         width: '100%',
-                        height: '100%'
+                        height: '100%',
+                        background: 'transparent' // Ensure bg is transparent
                     }}
                 />
 

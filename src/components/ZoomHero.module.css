@@ -2,7 +2,7 @@
     position: relative;
     height: 800vh;
     width: 100%;
-    background-color: #050505;
+    background-color: #ffffff;
 }
 
 .stickyWrapper {
@@ -138,6 +138,7 @@
 
 .dnaLayer {
     z-index: 30;
+    background: transparent;
 }
 
 .globeLayer {
