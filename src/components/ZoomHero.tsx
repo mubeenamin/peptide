@@ -1,286 +1,357 @@
 'use client';
 
-import { motion, useScroll, useTransform, MotionValue, useMotionValueEvent, useSpring } from 'framer-motion';
-import { useRef, useState, useEffect } from 'react';
+import { useRef, useState, useEffect, useLayoutEffect } from 'react';
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import styles from './ZoomHero.module.css';
 
-// --- Generic Frame Sequence Component ---
-interface FrameSequenceProps {
-    playbackValue: MotionValue<number>;
-    frameCount: number;
-    folderPath: string;
-    filePrefix: string;
-    range: [number, number]; // [start, end] of the scroll timeline
-}
-
-function FrameSequenceBackground({ playbackValue, frameCount, folderPath, filePrefix, range }: FrameSequenceProps) {
-    const canvasRef = useRef<HTMLCanvasElement>(null);
-    const [images, setImages] = useState<HTMLImageElement[]>([]);
-    const [isLoaded, setIsLoaded] = useState(false);
-
-    const smoothPlayback = useSpring(playbackValue, {
-        stiffness: 150,
-        damping: 30,
-        mass: 0.5
-    });
-
-    useEffect(() => {
-        let loadedCount = 0;
-        const imgArray: HTMLImageElement[] = [];
-
-        // Preload Frame Sequence
-        for (let i = 1; i <= frameCount; i++) {
-            const img = new Image();
-            const fileName = `${filePrefix}${String(i).padStart(3, '0')}.png`;
-            img.src = `${folderPath}${fileName}`;
-            img.onload = () => {
-                loadedCount++;
-                if (loadedCount >= frameCount) setIsLoaded(true);
-            };
-            img.onerror = () => console.warn(`Failed to load: ${folderPath}${fileName}`);
-            imgArray.push(img);
-        }
-        setImages(imgArray);
-    }, [frameCount, folderPath, filePrefix]);
-
-    useEffect(() => {
-        let requestRef: number;
-
-        const renderFrame = () => {
-            if (!canvasRef.current || images.length === 0) return;
-
-            const ctx = canvasRef.current.getContext('2d', { alpha: false });
-            if (!ctx) return;
-
-            const val = smoothPlayback.get();
-            const [start, end] = range;
-            const duration = end - start;
-
-            // Map global scroll value to local sequences progress (0 to 1)
-            let phase = 0;
-            if (val < start) {
-                phase = 0;
-            } else if (val > end) {
-                phase = 1;
-            } else {
-                phase = (val - start) / duration;
-            }
-
-            const frameIndex = Math.min(
-                frameCount - 1,
-                Math.floor(phase * (frameCount - 1))
-            );
-
-            const img = images[frameIndex];
-
-            if (img && img.complete) {
-                const canvas = canvasRef.current;
-
-                // Cover logic
-                const hRatio = canvas.width / img.width;
-                const vRatio = canvas.height / img.height;
-                const ratio = Math.max(hRatio, vRatio);
-
-                const centerShift_x = (canvas.width - img.width * ratio) / 2;
-                const centerShift_y = (canvas.height - img.height * ratio) / 2;
-
-                ctx.drawImage(img,
-                    0, 0, img.width, img.height,
-                    centerShift_x, centerShift_y, img.width * ratio, img.height * ratio
-                );
-            }
-
-            requestRef = requestAnimationFrame(renderFrame);
-        };
-
-        requestRef = requestAnimationFrame(renderFrame);
-
-        const handleResize = () => {
-            if (canvasRef.current) {
-                canvasRef.current.width = window.innerWidth;
-                canvasRef.current.height = window.innerHeight;
-            }
-        };
-        window.addEventListener('resize', handleResize);
-        handleResize();
-
-        return () => {
-            cancelAnimationFrame(requestRef);
-            window.removeEventListener('resize', handleResize);
-        };
-    }, [images, smoothPlayback, range, frameCount]);
-
-    return (
-        <div style={{ width: '100%', height: '100%', position: 'relative', overflow: 'hidden', backgroundColor: 'transparent' }}>
-            <canvas
-                ref={canvasRef}
-                style={{
-                    display: 'block',
-                    width: '100%',
-                    height: '100%',
-                    opacity: isLoaded ? 1 : 0,
-                    transition: 'opacity 0.5s ease-in'
-                }}
-            />
-            {!isLoaded && (
-                <div style={{
-                    position: 'absolute',
-                    inset: 0,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                }}>
-                    <div className={styles.spinner}></div>
-                </div>
-            )}
-        </div>
-    );
+// Register ScrollTrigger
+if (typeof window !== 'undefined') {
+    gsap.registerPlugin(ScrollTrigger);
 }
 
 export default function ZoomHero() {
     const containerRef = useRef<HTMLDivElement>(null);
+    const stickyRef = useRef<HTMLDivElement>(null);
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+    const worldRef = useRef<HTMLDivElement>(null);
 
-    // TOTAL SCROLL TRACK: 800vh
-    // 0.0 - 0.45: Veins Sequence
-    // 0.35 - 0.55: Doctors Appear & Hold
-    // 0.55 - 0.65: Transition (Docs Fade Out, DNA Fades In)
-    // 0.65 - 1.00: DNA Sequence
-    const { scrollYProgress } = useScroll({
-        target: containerRef,
-        offset: ["start start", "end start"]
-    });
+    // Layer Refs
+    const veinsRef = useRef<HTMLDivElement>(null);
+    const doctorRef = useRef<HTMLDivElement>(null);
+    const dnaRef = useRef<HTMLDivElement>(null);
+    const productRef = useRef<HTMLDivElement>(null);
 
-    // --- 1. HERO TEXT (0 - 0.1) ---
-    // Start immediately, slightly longer fade to match "time of play" feel
-    const textScale = useTransform(scrollYProgress, [0, 0.1], [1, 2.5]);
-    const textOpacity = useTransform(scrollYProgress, [0, 0.08], [1, 0]);
+    // Frame Storage (Storing actual Image objects for Canvas)
+    const veinsFrames = useRef<HTMLImageElement[]>([]);
+    const boneFrames = useRef<HTMLImageElement[]>([]);
+    const rbcFrames = useRef<HTMLImageElement[]>([]);
+    const dnaFrames = useRef<HTMLImageElement[]>([]);
 
-    // --- 2. VEINS SEQUENCE (0 - 0.5) ---
-    // Scrub extends to 0.5.
-    // Fades out completely by 0.6.
-    const veinsOpacity = useTransform(scrollYProgress, [0.5, 0.6], [1, 0]);
+    // --- High-Performance Preloading ---
+    useEffect(() => {
+        const preload = (prefix: string, path: string, count: number, padding: number, store: React.MutableRefObject<HTMLImageElement[]>, onFirstLoad?: () => void) => {
+            const arr: HTMLImageElement[] = [];
+            for (let i = 1; i <= count; i++) {
+                const img = new Image();
+                img.onload = () => {
+                    if (i === 1 && onFirstLoad) onFirstLoad();
+                };
+                img.src = `${path}${prefix}${String(i).padStart(padding, '0')}.png`;
+                arr.push(img);
+            }
+            store.current = arr;
+        };
 
-    // --- 3. DOCTOR REVEAL (0.35 - 0.5) -> DIVE IN (0.5 - 0.6) ---
-    // Trigger relative to Veins scrub [0, 0.45]
-    // Strictly DIVE IN (Zoom huge, no fade out)
-    // Opacity stays 1 until we are "through" it (at 0.6)
-    const doc2Opacity = useTransform(scrollYProgress, [0.36, 0.45, 0.58, 0.6], [0, 1, 1, 0]);
-    // Super Zoom (1 -> 8) to simulate diving through the image
-    const doc2Scale = useTransform(scrollYProgress, [0.36, 0.45, 0.5, 0.6], [0, 1, 1, 8]);
-    const doc2Y = useTransform(scrollYProgress, [0.36, 0.45], ["15vh", "0vh"]);
+        const onFirstVeinLoad = () => {
+            if (veinsFrames.current[0]) drawToCanvas(veinsFrames.current[0]);
+        };
 
-    const doc1Opacity = useTransform(scrollYProgress, [0.42, 0.5, 0.58, 0.6], [0, 1, 1, 0]);
-    // Also zoom doc1 so they fly past together
-    const doc1Scale = useTransform(scrollYProgress, [0.5, 0.6], [1, 8]);
-    const doc1X = useTransform(scrollYProgress, [0.42, 0.5], ["120%", "0%"]); // Slide in, then zoom center
+        // updated counts based on folder contents
+        preload('transparent', '/VEINS/', 90, 4, veinsFrames, onFirstVeinLoad);
+        preload('', '/BONE/', 67, 4, boneFrames);
+        preload('', '/RBC/', 120, 4, rbcFrames);
+        preload('DNA_', '/DNA/', 150, 5, dnaFrames);
 
-    // --- 4. DNA SEQUENCE (Scrub 0.6 - 1.0) ---
-    // Fades in just as doctors leave
-    // Fades in STRICTLY after Doctors are gone (0.6)
-    const dnaOpacity = useTransform(scrollYProgress, [0.6, 0.7], [0, 1]);
+        // Handle Canvas Resize
+        const handleResize = () => {
+            if (canvasRef.current) {
+                canvasRef.current.width = window.innerWidth;
+                canvasRef.current.height = window.innerHeight;
+                if (veinsFrames.current[0]) drawToCanvas(veinsFrames.current[0]);
+            }
+        };
 
-    // --- 5. DNA PRODUCT REVEAL (1.png) ---
-    // Trigger at DNA Frame 21.
-    // DNA Range: [0.6, 1.0] (Duration 0.4).
-    // Frame 21/50 = 42%.
-    // Trigger = 0.6 + (0.4 * 0.42) = 0.768.
-    const productOpacity = useTransform(scrollYProgress, [0.768, 1.0], [0, 1]);
-    const productScale = useTransform(scrollYProgress, [0.768, 1.0], [0, 1]); // Zero to Max
-    const productY = useTransform(scrollYProgress, [0.768, 1.0], ["-15vh", "-30vh"]); // Appear higher and float up
+        window.addEventListener('resize', handleResize);
+        handleResize();
+        return () => window.removeEventListener('resize', handleResize);
+    }, []);
 
+    // Canvas Drawing Utility (Wamos Air cinematic cover logic)
+    const drawToCanvas = (img: HTMLImageElement) => {
+        const canvas = canvasRef.current;
+        if (!canvas || !img.complete) return;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) return;
+
+        const canvasAspect = canvas.width / canvas.height;
+        const imgAspect = img.width / img.height;
+        let drawW, drawH, offsetX, offsetY;
+
+        if (canvasAspect > imgAspect) {
+            drawW = canvas.width;
+            drawH = canvas.width / imgAspect;
+            offsetX = 0;
+            offsetY = (canvas.height - drawH) / 2;
+        } else {
+            drawH = canvas.height;
+            drawW = canvas.height * imgAspect;
+            offsetX = (canvas.width - drawW) / 2;
+            offsetY = 0;
+        }
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, offsetX, offsetY, drawW, drawH);
+    };
+
+    // --- GSAP Animation (Wamos Air Style) ---
+    useLayoutEffect(() => {
+        const ctx = gsap.context(() => {
+            // Draw first frame immediately if ready
+            if (veinsFrames.current[0]) drawToCanvas(veinsFrames.current[0]);
+            const tl = gsap.timeline({
+                scrollTrigger: {
+                    trigger: containerRef.current,
+                    start: "top top",
+                    end: "bottom bottom",
+                    scrub: 0.5,
+                    pinnedContainer: stickyRef.current,
+                }
+            });
+
+            // 0. INITIAL STATE - Text visible on load
+            gsap.set(veinsRef.current, { z: 0, opacity: 1 });
+            gsap.set(".heroText", { z: 0, opacity: 1 });
+            gsap.set(doctorRef.current, { z: 0, opacity: 0, scale: 0.1 });
+            gsap.set(dnaRef.current, { z: 0, opacity: 0 });
+            gsap.set(productRef.current, { z: -8000, opacity: 0, scale: 1 });
+
+
+            // --- TIMELINE SEQUENCE ---
+            // Total Duration: ~20s (Scrub based)
+
+            // --- PHASE 1: VEINS (0 - 3.0s) ---
+            const veinsObj = { frame: 0 };
+            tl.to(veinsObj, {
+                frame: 89,
+                duration: 3.0,
+                ease: "none",
+                onUpdate: () => {
+                    const img = veinsFrames.current[Math.round(veinsObj.frame)];
+                    if (img) drawToCanvas(img);
+                }
+            }, 0);
+
+            // Text: Zoom In & Fade Out
+            tl.to(".heroText", {
+                z: 2500,
+                scale: 2,
+                opacity: 0,
+                duration: 1.5,
+                ease: "power2.in"
+            }, 0.5);
+
+
+            // --- PHASE 2: BONE SEQUENCE (3.0s - 6.0s) ---
+            // Starts immediately after Veins
+            const boneObj = { frame: 0 };
+            tl.to(boneObj, {
+                frame: 66,
+                duration: 3.0,
+                ease: "none",
+                onUpdate: () => {
+                    const img = boneFrames.current[Math.round(boneObj.frame)];
+                    if (img) drawToCanvas(img);
+                }
+            }, 3.0);
+
+            // FADE OUT BONES (Canvas) to White when Doctor appears
+            tl.to(canvasRef.current, { opacity: 0, duration: 0.5, ease: "power1.out" }, 6.0);
+
+
+            // --- PHASE 3: DOCTOR OVERLAY (Starts AFTER Bone: 6.0s - 8.5s) ---
+            // "Appear from small size and then gradually increase size"
+
+            // 1. Initial State
+            tl.set(doctorRef.current, { opacity: 0, scale: 0.5, z: 0 }, 0); // Start smaller
+            tl.set([".cardLeft", ".cardRight"], { scale: 0.2, opacity: 0 }, 0);
+
+            // 2. Appear & Zoom In (Start 6.0s)
+            tl.to(doctorRef.current, {
+                opacity: 1,
+                scale: 1,
+                duration: 1.0,
+                ease: "power2.out"
+            }, 6.0);
+
+            // Continue Zooming (Gradual increase)
+            tl.to(doctorRef.current, {
+                scale: 1.2,
+                duration: 1.5,
+                ease: "none"
+            }, 7.0);
+
+            // 3. FADE OUT DOCTOR (at 8.5s)
+            tl.to(doctorRef.current, {
+                opacity: 0,
+                scale: 1.3,
+                duration: 0.5,
+                ease: "power1.in"
+            }, 8.5);
+
+
+            // --- INTERMISSION: FLOATING CARDS ZOOM (9.0s - 11.5s) ---
+
+            // 1st Card (Right)
+            tl.fromTo(".cardRight",
+                { scale: 0.2, opacity: 0, z: 0 },
+                { scale: 1, opacity: 1, duration: 0.8, ease: "power2.out" },
+                9.0
+            );
+            tl.to(".cardRight", { scale: 1.5, duration: 1.2, ease: "none" }, 9.8);
+            tl.to(".cardRight", { opacity: 0, duration: 0.2 }, 11.0);
+
+            // 2nd Card (Left)
+            tl.fromTo(".cardLeft",
+                { scale: 0.2, opacity: 0, z: 0 },
+                { scale: 1, opacity: 1, duration: 0.8, ease: "power2.out" },
+                9.6
+            );
+            tl.to(".cardLeft", { scale: 1.5, duration: 1.2, ease: "none" }, 10.4);
+            tl.to(".cardLeft", { opacity: 0, duration: 0.2 }, 11.6);
+
+
+            // --- PHASE 4: RBC SEQUENCE (11.5s - 15.5s) ---
+
+            // Fade Canvas Back In (Show RBCs)
+            tl.to(canvasRef.current, { opacity: 1, duration: 0.5, ease: "power1.in" }, 11.3);
+
+            const rbcObj = { frame: 0 };
+            tl.to(rbcObj, {
+                frame: 119,
+                duration: 4.0,
+                ease: "none",
+                onUpdate: () => {
+                    const img = rbcFrames.current[Math.round(rbcObj.frame)];
+                    if (img) drawToCanvas(img);
+                }
+            }, 11.5);
+
+
+            // --- PHASE 5: DNA SEQUENCE (15.5s - 19.5s) ---
+
+
+
+            const dnaObj = { frame: 0 };
+            tl.to(dnaObj, {
+                frame: 149,
+                duration: 4.0,
+                ease: "none",
+                onUpdate: () => {
+                    const img = dnaFrames.current[Math.round(dnaObj.frame)];
+                    if (img) drawToCanvas(img);
+                }
+            }, 15.5);
+
+            // DNA Overlay Opacity
+            tl.to(dnaRef.current, { opacity: 1, duration: 1.0 }, 15.5);
+            tl.to(dnaRef.current, { opacity: 0, duration: 1.0 }, 19.0);
+
+
+
+
+            // --- PHASE 6: PRODUCT (20.0s - 24.0s) ---
+            tl.set(productRef.current, { z: -1000, opacity: 0, scale: 0.5 });
+
+            tl.to(productRef.current, {
+                z: 0,
+                opacity: 1,
+                scale: 1,
+                duration: 2,
+                ease: "power2.out"
+            }, 20.0);
+
+            tl.to(productRef.current, {
+                z: 0,
+                opacity: 1,
+                scale: 1,
+                duration: 2,
+                ease: "power2.out"
+            }, 17.5);
+
+            tl.to(productRef.current, {
+                rotateY: 20,
+                duration: 2,
+                ease: "power1.inOut"
+            }, 19.5);
+
+            tl.to({}, { duration: 2 }); // Buffer // Buffer
+
+        }, containerRef);
+
+        return () => ctx.revert();
+    }, []);
 
     return (
         <div ref={containerRef} className={styles.heroContainer}>
-            <div className={styles.stickyWrapper}>
+            <div ref={stickyRef} className={styles.stickyWrapper}>
 
-                {/* A. Veins Layer (Bottom) */}
-                <motion.div
-                    className={styles.imageContainer}
-                    style={{
-                        opacity: veinsOpacity,
-                        zIndex: 1,
-                        scale: useTransform(scrollYProgress, [0.5, 0.6], [1, 5]) // Dive into veins
-                    }}
-                >
-                    <FrameSequenceBackground
-                        playbackValue={scrollYProgress}
-                        folderPath="/veinsv_frames/veinsv_frames/"
-                        filePrefix="veinsv_"
-                        frameCount={51}
-                        range={[0, 0.5]}
-                    />
-                </motion.div>
-
-                {/* B. DNA Layer (Top, initially hidden) */}
-                <motion.div
-                    className={styles.imageContainer}
-                    style={{ opacity: dnaOpacity, zIndex: 5 }}
-                >
-                    <FrameSequenceBackground
-                        playbackValue={scrollYProgress}
-                        folderPath="/dna_frames/"
-                        filePrefix="dna_"
-                        frameCount={50}
-                        range={[0.6, 1.0]}
-                    />
-                </motion.div>
-
-                {/* C. Hero Text */}
-                <motion.div
-                    className={styles.content}
-                    style={{ opacity: textOpacity, scale: textScale, zIndex: 10 }}
-                >
-                    <h1 className={styles.title}>Discovery Through <br /></h1>
-                    <p className={styles.subtitle}>
-                        Pioneering the next generation of peptide research with unmatched purity and scientific excellence.
-                    </p>
-                </motion.div>
-
-                {/* D. Doctor Section (Over Veins, Under DNA transition) */}
-                <div className={styles.doctorSection} style={{ zIndex: 15 }}>
-                    <motion.div
-                        className={styles.doc1Wrapper}
-                        style={{ x: doc1X, opacity: doc1Opacity, scale: doc1Scale }}
-                    >
-                        <img src="/doc1.png" alt="Lab Support" className={styles.doc1Image} />
-                    </motion.div>
-
-                    <motion.div
-                        className={styles.doc2Wrapper}
-                        style={{ opacity: doc2Opacity, scale: doc2Scale, y: doc2Y }}
-                    >
-                        <img src="/doc 2.png" alt="Chief Researcher" className={styles.doc2Image} />
-                    </motion.div>
-                </div>
-
-                {/* E. DNA Product Section (Topmost) */}
-                <motion.div
-                    className={styles.productWrapper}
+                {/* Wamos Air uses a single canvas for sequence rendering */}
+                <canvas
+                    ref={canvasRef}
                     style={{
                         position: 'absolute',
-                        top: 0, left: 0, width: '100%', height: '100%',
-                        display: 'flex', alignItems: 'center', justifyContent: 'center',
-                        zIndex: 20,
-                        pointerEvents: 'none'
+                        inset: 0,
+                        zIndex: 1,
+                        width: '100%',
+                        height: '100%'
                     }}
-                >
-                    <motion.img
-                        src="/1.png"
-                        alt="Peptide Structure"
-                        style={{
-                            maxWidth: '40vw',
-                            maxHeight: '60vh',
-                            objectFit: 'contain',
-                            scale: productScale,
-                            opacity: productOpacity,
-                            y: productY
-                        }}
-                    />
-                </motion.div>
-            </div>
+                />
 
-            {/* Long scroll track to accommodate 2 full sequences + transitions */}
-            <div style={{ height: '800vh' }} />
+                <div ref={worldRef} className={styles.scene3D} style={{ zIndex: 2 }}>
+
+                    {/* LAYER 1: Text Overlays */}
+                    <div ref={veinsRef} className={`${styles.layer} ${styles.veinsLayer}`}>
+                        <div className={`${styles.heroContent} heroText`}>
+                            <h1 className={styles.title}>Discovery Through <br /> Science</h1>
+                            <p className={styles.subtitle}>
+                                Pioneering the next generation of peptide research.
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* LAYER 2: Doctor */}
+                    {/* LAYER 2: Doctor */}
+                    <div ref={doctorRef} className={`${styles.layer} ${styles.doctorLayer}`}>
+                        <img
+                            src="/doc sec.jpeg"
+                            alt="Research Team"
+                            className={styles.docFullImage}
+                        />
+                    </div>
+
+                    {/* INTERMISSION LAYER: Floating Cards (Separate from Doctor) */}
+                    <div className={`${styles.layer} ${styles.cardsLayer}`}>
+                        {/* 1st Card: Right Side (GMP) */}
+                        <div className={`${styles.cardFloating} ${styles.cardRight} cardRight`}>
+                            <div className={styles.cardTitle}>GMP-Compliant <br /> Manufacturing</div>
+                            <p className={styles.cardText}>
+                                State-of-the-art facilities ensuring the highest purity levels for all peptide batches.
+                            </p>
+                        </div>
+
+                        {/* 2nd Card: Left Side (Precise) */}
+                        <div className={`${styles.cardFloating} ${styles.cardLeft} cardLeft`}>
+                            <div className={styles.cardTitle}>Precise Amino <br /> Acid Sequencing</div>
+                            <p className={styles.cardText}>
+                                Share information on a previous project here to attract new clients.
+                            </p>
+                        </div>
+                    </div>
+
+                    {/* LAYER 3: DNA Overlay (Logic handled by Canvas) */}
+                    <div ref={dnaRef} className={`${styles.layer} ${styles.dnaLayer}`}>
+                    </div>
+
+                    {/* LAYER 4: Product Overlay */}
+                    <div ref={productRef} className={`${styles.layer} ${styles.globeLayer}`}>
+                        <div className={styles.layer} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+                            <img src="/1.png" className={`${styles.productImage} productImage`} alt="Molecule" />
+                        </div>
+                    </div>
+
+                </div>
+            </div>
         </div>
     );
 }
