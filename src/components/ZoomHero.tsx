@@ -361,10 +361,7 @@ export default function ZoomHero() {
                     {/* LAYER 3: Untitled/Folder 30 */}
                     <div ref={untitledLayerRef} className={`${styles.layer} ${styles.untitledLayer}`}>
                         <div className={styles.heroContent}>
-                            <h2 className={styles.title}>Clinical <br /> Excellence</h2>
-                            <p className={styles.subtitle}>
-                                Driving healthcare innovation through rigorous scientific methodology.
-                            </p>
+
                         </div>
                     </div>
 
