@@ -2,6 +2,7 @@
 
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { useRef } from 'react';
+import Image from 'next/image';
 
 export default function DocReveal() {
     const containerRef = useRef<HTMLDivElement>(null);
@@ -16,9 +17,7 @@ export default function DocReveal() {
 
     return (
         <div ref={containerRef} style={{ maxWidth: '800px', margin: '0 auto 40px' }}>
-            <motion.img
-                src="/doc model.png"
-                alt="Scientific Model"
+            <motion.div
                 style={{
                     scale,
                     opacity,
@@ -27,7 +26,16 @@ export default function DocReveal() {
                     display: 'block',
                     willChange: 'transform, opacity'
                 }}
-            />
+            >
+                <Image
+                    src="/doc model.png"
+                    alt="Scientific Model"
+                    width={3309}
+                    height={3038}
+                    layout="responsive"
+                    priority
+                />
+            </motion.div>
         </div>
     );
 }

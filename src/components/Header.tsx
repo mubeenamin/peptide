@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import styles from './Header.module.css';
@@ -39,10 +40,13 @@ export default function Header() {
         <header className={pathname === '/' ? styles.headerHome : styles.header}>
             <div className={styles.inner}>
                 <Link href="/" className={styles.logo}>
-                    <img
+                    <Image
                         src="/logo.svg"
                         alt="Peptide Logo"
+                        width={500}
+                        height={500}
                         className={styles.logoImage}
+                        priority
                     />
                 </Link>
 

@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 import { useParams } from 'next/navigation';
 import styles from './page.module.css';
 import { Product } from '@/types';
@@ -112,11 +113,16 @@ export default function ProductPage() {
 
                         <div className={styles.imagePlaceholder}>
                             {product.image_url && !product.image_url.includes('placeholder') ? (
-                                <img
-                                    src={product.image_url}
-                                    alt={product.name}
-                                    style={{ width: '100%', height: 'auto', maxHeight: '300px', objectFit: 'contain' }}
-                                />
+                                <div style={{ position: 'relative', width: '100%', height: '300px' }}>
+                                    <Image
+                                        src={product.image_url}
+                                        alt={product.name}
+                                        fill
+                                        sizes="(max-width: 768px) 100vw, 50vw"
+                                        style={{ objectFit: 'contain' }}
+                                        priority
+                                    />
+                                </div>
                             ) : (
                                 <span style={{ fontSize: '8rem' }}>💊</span>
                             )}

@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useState, useEffect, useLayoutEffect } from 'react';
+import NextImage from 'next/image';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import styles from './ZoomHero.module.css';
@@ -19,23 +20,24 @@ export default function ZoomHero() {
     // Layer Refs
     const veinsRef = useRef<HTMLDivElement>(null);
     const doctorRef = useRef<HTMLDivElement>(null);
-    const dnaRef = useRef<HTMLDivElement>(null);
+    const untitledLayerRef = useRef<HTMLDivElement>(null);
     const productRef = useRef<HTMLDivElement>(null);
 
     // Frame Storage (Storing actual Image objects for Canvas)
     const veinsFrames = useRef<HTMLImageElement[]>([]);
     const boneFrames = useRef<HTMLImageElement[]>([]);
     const rbcFrames = useRef<HTMLImageElement[]>([]);
-    const dnaFrames = useRef<HTMLImageElement[]>([]);
+    const compFrames = useRef<HTMLImageElement[]>([]);
+    const untitledFrames = useRef<HTMLImageElement[]>([]);
 
     // --- High-Performance Preloading ---
     useEffect(() => {
-        const preload = (prefix: string, path: string, count: number, padding: number, store: React.MutableRefObject<HTMLImageElement[]>, onFirstLoad?: () => void) => {
+        const preload = (prefix: string, path: string, count: number, padding: number, store: React.MutableRefObject<HTMLImageElement[]>, startAt: number = 1, onFirstLoad?: () => void) => {
             const arr: HTMLImageElement[] = [];
-            for (let i = 1; i <= count; i++) {
+            for (let i = startAt; i < startAt + count; i++) {
                 const img = new Image();
                 img.onload = () => {
-                    if (i === 1 && onFirstLoad) onFirstLoad();
+                    if (i === startAt && onFirstLoad) onFirstLoad();
                 };
                 img.src = `${path}${prefix}${String(i).padStart(padding, '0')}.png`;
                 arr.push(img);
@@ -48,10 +50,11 @@ export default function ZoomHero() {
         };
 
         // updated counts based on folder contents
-        preload('transparent', '/VEINS/', 90, 4, veinsFrames, onFirstVeinLoad);
-        preload('', '/BONE/', 67, 4, boneFrames);
-        preload('', '/RBC/', 120, 4, rbcFrames);
-        preload('DNA_', '/DNA/', 150, 5, dnaFrames);
+        preload('transparent', '/VEINS/', 90, 4, veinsFrames, 1, onFirstVeinLoad);
+        preload('', '/BONE/', 67, 4, boneFrames, 1);
+        preload('', '/RBC/', 120, 4, rbcFrames, 1);
+        preload('Comp_', '/24/', 150, 5, compFrames, 0);
+        preload('Untitled9_', '/30/', 120, 5, untitledFrames, 0);
 
         // Handle Canvas Resize
         const handleResize = () => {
@@ -113,12 +116,12 @@ export default function ZoomHero() {
             gsap.set(veinsRef.current, { z: 0, opacity: 1 });
             gsap.set(".heroText", { z: 0, opacity: 1 });
             gsap.set(doctorRef.current, { z: 0, opacity: 0, scale: 0.1 });
-            gsap.set(dnaRef.current, { z: 0, opacity: 0 });
+            gsap.set(untitledLayerRef.current, { z: -1000, opacity: 0, scale: 0.5 });
             gsap.set(productRef.current, { z: -8000, opacity: 0, scale: 1 });
 
 
             // --- TIMELINE SEQUENCE ---
-            // Total Duration: ~20s (Scrub based)
+            // Total Duration: ~28s (Scrub based)
 
             // --- PHASE 1: VEINS (0 - 3.0s) ---
             const veinsObj = { frame: 0 };
@@ -228,29 +231,50 @@ export default function ZoomHero() {
             }, 11.5);
 
 
-            // --- PHASE 5: DNA SEQUENCE (15.5s - 19.5s) ---
-
-
-
-            const dnaObj = { frame: 0 };
-            tl.to(dnaObj, {
+            // --- PHASE 5: COMP SEQUENCE (15.5s - 19.5s) ---
+            const compObj = { frame: 0 };
+            tl.to(compObj, {
                 frame: 149,
                 duration: 4.0,
                 ease: "none",
                 onUpdate: () => {
-                    const img = dnaFrames.current[Math.round(dnaObj.frame)];
+                    const img = compFrames.current[Math.round(compObj.frame)];
                     if (img) drawToCanvas(img);
                 }
             }, 15.5);
 
-            // DNA Overlay Opacity
-            tl.to(dnaRef.current, { opacity: 1, duration: 1.0 }, 15.5);
-            tl.to(dnaRef.current, { opacity: 0, duration: 1.0 }, 19.0);
+
+            // --- PHASE 5.5: UNTITLED SEQUENCE (Folder 30) (19.5s - 23.5s) ---
+            const untitledObj = { frame: 0 };
+            tl.to(untitledObj, {
+                frame: 119,
+                duration: 4.0,
+                ease: "none",
+                onUpdate: () => {
+                    const img = untitledFrames.current[Math.round(untitledObj.frame)];
+                    if (img) drawToCanvas(img);
+                }
+            }, 19.5);
+
+            // Untitled Text Overlay
+            tl.to(untitledLayerRef.current, {
+                opacity: 1,
+                scale: 1,
+                z: 0,
+                duration: 1.5,
+                ease: "power2.out"
+            }, 20.0);
+
+            tl.to(untitledLayerRef.current, {
+                opacity: 0,
+                scale: 1.5,
+                z: 500,
+                duration: 1.0,
+                ease: "power2.in"
+            }, 22.5);
 
 
-
-
-            // --- PHASE 6: PRODUCT (20.0s - 24.0s) ---
+            // --- PHASE 6: PRODUCT (24.0s - 28.0s) ---
             tl.set(productRef.current, { z: -1000, opacity: 0, scale: 0.5 });
 
             tl.to(productRef.current, {
@@ -259,23 +283,15 @@ export default function ZoomHero() {
                 scale: 1,
                 duration: 2,
                 ease: "power2.out"
-            }, 20.0);
-
-            tl.to(productRef.current, {
-                z: 0,
-                opacity: 1,
-                scale: 1,
-                duration: 2,
-                ease: "power2.out"
-            }, 17.5);
+            }, 24.0);
 
             tl.to(productRef.current, {
                 rotateY: 20,
                 duration: 2,
                 ease: "power1.inOut"
-            }, 19.5);
+            }, 23.5);
 
-            tl.to({}, { duration: 2 }); // Buffer // Buffer
+            tl.to({}, { duration: 2 }); // Buffer
 
         }, containerRef);
 
@@ -312,16 +328,18 @@ export default function ZoomHero() {
                     </div>
 
                     {/* LAYER 2: Doctor */}
-                    {/* LAYER 2: Doctor */}
                     <div ref={doctorRef} className={`${styles.layer} ${styles.doctorLayer}`}>
-                        <img
+                        <NextImage
                             src="/doc sec.jpeg"
                             alt="Research Team"
+                            width={1094}
+                            height={546}
                             className={styles.docFullImage}
+                            priority
                         />
                     </div>
 
-                    {/* INTERMISSION LAYER: Floating Cards (Separate from Doctor) */}
+                    {/* INTERMISSION LAYER: Floating Cards */}
                     <div className={`${styles.layer} ${styles.cardsLayer}`}>
                         {/* 1st Card: Right Side (GMP) */}
                         <div className={`${styles.cardFloating} ${styles.cardRight} cardRight`}>
@@ -340,14 +358,26 @@ export default function ZoomHero() {
                         </div>
                     </div>
 
-                    {/* LAYER 3: DNA Overlay (Logic handled by Canvas) */}
-                    <div ref={dnaRef} className={`${styles.layer} ${styles.dnaLayer}`}>
+                    {/* LAYER 3: Untitled/Folder 30 */}
+                    <div ref={untitledLayerRef} className={`${styles.layer} ${styles.untitledLayer}`}>
+                        <div className={styles.heroContent}>
+                            <h2 className={styles.title}>Clinical <br /> Excellence</h2>
+                            <p className={styles.subtitle}>
+                                Driving healthcare innovation through rigorous scientific methodology.
+                            </p>
+                        </div>
                     </div>
 
                     {/* LAYER 4: Product Overlay */}
                     <div ref={productRef} className={`${styles.layer} ${styles.globeLayer}`}>
                         <div className={styles.layer} style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                            <img src="/1.png" className={`${styles.productImage} productImage`} alt="Molecule" />
+                            <NextImage
+                                src="/1.png"
+                                alt="Molecule"
+                                width={1280}
+                                height={720}
+                                className={`${styles.productImage} productImage`}
+                            />
                         </div>
                     </div>
 

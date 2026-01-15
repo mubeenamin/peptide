@@ -1,6 +1,6 @@
 .heroContainer {
     position: relative;
-    height: 800vh;
+    height: 1500vh;
     width: 100%;
     background-color: #ffffff;
 }
@@ -139,6 +139,10 @@
 .dnaLayer {
     z-index: 30;
     background: transparent;
+}
+
+.untitledLayer {
+    z-index: 35;
 }
 
 .globeLayer {

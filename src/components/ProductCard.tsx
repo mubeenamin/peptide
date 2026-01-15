@@ -2,6 +2,7 @@
 
 import styles from './ProductCard.module.css';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Product } from '@/types';
 
 interface ProductCardProps {
@@ -13,10 +14,13 @@ export default function ProductCard({ product }: ProductCardProps) {
         <div className={styles.card}>
             <Link href={`/product/${product.id}`} className={styles.imageWrapper}>
                 {product.image_url && !product.image_url.includes('placeholder') ? (
-                    <img
+                    <Image
                         src={product.image_url}
                         alt={product.name}
-                        style={{ width: '100%', height: '100%', objectFit: 'contain' }}
+                        fill
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+                        style={{ objectFit: 'contain' }}
+                        className={styles.productImage}
                     />
                 ) : (
                     <div className={styles.placeholderImage}>⚗️</div>
