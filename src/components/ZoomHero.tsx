@@ -166,8 +166,18 @@ export default function ZoomHero() {
             // "Appear from small size and then gradually increase size"
 
             // 1. Initial State
-            tl.set(doctorRef.current, { opacity: 0, scale: 0.5, z: 0 }, 0); // Start smaller
-            tl.set([".cardLeft", ".cardRight"], { scale: 0.2, opacity: 0 }, 0);
+            tl.set(doctorRef.current, { opacity: 0, scale: 0.1, z: 0 }, 0);
+
+            // Initial state for all 6 cards (2D-style)
+            tl.set([".cardRight", ".cardLeft", ".card3", ".card4", ".card5", ".card6"], {
+                opacity: 0,
+                scale: 0.5,
+                z: 0
+            }, 0);
+
+            tl.set(untitledLayerRef.current, { z: 0, opacity: 0, scale: 0.5 }, 0);
+            tl.set(productRef.current, { z: 0, opacity: 0, scale: 1 }, 0);
+            // No worldRef Z-init needed for 2D style
 
             // 2. Appear & Zoom In (Start 6.0s)
             tl.to(doctorRef.current, {
@@ -193,31 +203,46 @@ export default function ZoomHero() {
             }, 8.5);
 
 
-            // --- INTERMISSION: FLOATING CARDS ZOOM (9.0s - 11.5s) ---
+            // --- INTERMISSION: FLOATING CARDS ZOOM (9.0s - 17.75s) ---
 
+            // Show first frame of RBC in background during cards
+            tl.to(canvasRef.current, { opacity: 1, duration: 1.0, ease: "power1.in" }, 8.7);
+            tl.to({}, {
+                duration: 7.3, // Adjusted duration from 8.75 to 7.3 (8.75 - 1.45s shift)
+                onUpdate: () => {
+                    if (rbcFrames.current[0]) drawToCanvas(rbcFrames.current[0]);
+                }
+            }, 9.0);
+
+            // SEQUENTIAL 2D-STYLE ZOOM (Scale based)
             // 1st Card (Right)
-            tl.fromTo(".cardRight",
-                { scale: 0.2, opacity: 0, z: 0 },
-                { scale: 1, opacity: 1, duration: 0.8, ease: "power2.out" },
-                9.0
-            );
-            tl.to(".cardRight", { scale: 1.5, duration: 1.2, ease: "none" }, 9.8);
-            tl.to(".cardRight", { opacity: 0, duration: 0.2 }, 11.0);
+            tl.to(".cardRight", { scale: 1, opacity: 1, duration: 1.2, ease: "power2.out" }, 9.0);
+            tl.to(".cardRight", { scale: 1.5, opacity: 0, duration: 1.2, ease: "power2.in" }, 10.5);
 
             // 2nd Card (Left)
-            tl.fromTo(".cardLeft",
-                { scale: 0.2, opacity: 0, z: 0 },
-                { scale: 1, opacity: 1, duration: 0.8, ease: "power2.out" },
-                9.6
-            );
-            tl.to(".cardLeft", { scale: 1.5, duration: 1.2, ease: "none" }, 10.4);
-            tl.to(".cardLeft", { opacity: 0, duration: 0.2 }, 11.6);
+            tl.to(".cardLeft", { scale: 1, opacity: 1, duration: 1.2, ease: "power2.out" }, 10.2);
+            tl.to(".cardLeft", { scale: 1.5, opacity: 0, duration: 1.2, ease: "power2.in" }, 11.7);
+
+            // 3rd Card (Top Left)
+            tl.to(".card3", { scale: 1, opacity: 1, duration: 1.2, ease: "power2.out" }, 11.4);
+            tl.to(".card3", { scale: 1.5, opacity: 0, duration: 1.2, ease: "power2.in" }, 12.9);
+
+            // 4th Card (Bottom Right)
+            tl.to(".card4", { scale: 1, opacity: 1, duration: 1.2, ease: "power2.out" }, 12.6);
+            tl.to(".card4", { scale: 1.5, opacity: 0, duration: 1.2, ease: "power2.in" }, 14.1);
+
+            // 5th Card (Top Right)
+            tl.to(".card5", { scale: 1, opacity: 1, duration: 1.2, ease: "power2.out" }, 13.8);
+            tl.to(".card5", { scale: 1.5, opacity: 0, duration: 1.2, ease: "power2.in" }, 15.3);
+
+            // 6th Card (Bottom Left)
+            tl.to(".card6", { scale: 1, opacity: 1, duration: 1.2, ease: "power2.out" }, 15.0);
+            tl.to(".card6", { scale: 1.5, opacity: 0, duration: 1.2, ease: "power2.in" }, 16.5);
+
+            // Final card finishes at 17.7s. Start next sequence accordingly.
 
 
-            // --- PHASE 4: RBC SEQUENCE (11.5s - 15.5s) ---
-
-            // Fade Canvas Back In (Show RBCs)
-            tl.to(canvasRef.current, { opacity: 1, duration: 0.5, ease: "power1.in" }, 11.3);
+            // --- PHASE 4: RBC SEQUENCE (starts at 17.7s) ---
 
             const rbcObj = { frame: 0 };
             tl.to(rbcObj, {
@@ -228,10 +253,10 @@ export default function ZoomHero() {
                     const img = rbcFrames.current[Math.round(rbcObj.frame)];
                     if (img) drawToCanvas(img);
                 }
-            }, 11.5);
+            }, 17.7);
 
 
-            // --- PHASE 5: COMP SEQUENCE (15.5s - 19.5s) ---
+            // --- PHASE 5: COMP SEQUENCE (21.7s) ---
             const compObj = { frame: 0 };
             tl.to(compObj, {
                 frame: 149,
@@ -241,10 +266,10 @@ export default function ZoomHero() {
                     const img = compFrames.current[Math.round(compObj.frame)];
                     if (img) drawToCanvas(img);
                 }
-            }, 15.5);
+            }, 21.7);
 
 
-            // --- PHASE 5.5: UNTITLED SEQUENCE (Folder 30) (19.5s - 23.5s) ---
+            // --- PHASE 5.5: UNTITLED SEQUENCE (Folder 30) (25.7s) ---
             const untitledObj = { frame: 0 };
             tl.to(untitledObj, {
                 frame: 119,
@@ -254,7 +279,7 @@ export default function ZoomHero() {
                     const img = untitledFrames.current[Math.round(untitledObj.frame)];
                     if (img) drawToCanvas(img);
                 }
-            }, 19.5);
+            }, 25.7);
 
             // Untitled Text Overlay
             tl.to(untitledLayerRef.current, {
@@ -263,7 +288,7 @@ export default function ZoomHero() {
                 z: 0,
                 duration: 1.5,
                 ease: "power2.out"
-            }, 20.0);
+            }, 26.2);
 
             tl.to(untitledLayerRef.current, {
                 opacity: 0,
@@ -271,11 +296,11 @@ export default function ZoomHero() {
                 z: 500,
                 duration: 1.0,
                 ease: "power2.in"
-            }, 22.5);
+            }, 28.7);
 
 
-            // --- PHASE 6: PRODUCT (24.0s - 28.0s) ---
-            tl.set(productRef.current, { z: -1000, opacity: 0, scale: 0.5 });
+            // --- PHASE 6: PRODUCT (30.2s) ---
+            tl.set(productRef.current, { z: 0, opacity: 0, scale: 0.5 });
 
             tl.to(productRef.current, {
                 z: 0,
@@ -283,13 +308,13 @@ export default function ZoomHero() {
                 scale: 1,
                 duration: 2,
                 ease: "power2.out"
-            }, 24.0);
+            }, 30.2);
 
             tl.to(productRef.current, {
                 rotateY: 20,
                 duration: 2,
                 ease: "power1.inOut"
-            }, 23.5);
+            }, 29.7);
 
             tl.to({}, { duration: 2 }); // Buffer
 
@@ -354,6 +379,38 @@ export default function ZoomHero() {
                             <div className={styles.cardTitle}>Precise Amino <br /> Acid Sequencing</div>
                             <p className={styles.cardText}>
                                 Share information on a previous project here to attract new clients.
+                            </p>
+                        </div>
+
+                        {/* 3rd Card: Top Left (24/7) */}
+                        <div className={`${styles.cardFloating} ${styles.cardTopLeft} card3`}>
+                            <div className={styles.cardTitle}>Quality <br /> Assurance</div>
+                            <p className={styles.cardText}>
+                                Comprehensive testing protocols for every batch, guaranteeing &gt;99% purity.
+                            </p>
+                        </div>
+
+                        {/* 4th Card: Bottom Right (Global) */}
+                        <div className={`${styles.cardFloating} ${styles.cardBottomRight} card4`}>
+                            <div className={styles.cardTitle}>Global <br /> Shipping</div>
+                            <p className={styles.cardText}>
+                                Secure and temperature-controlled logistics for worldwide delivery.
+                            </p>
+                        </div>
+
+                        {/* 5th Card: Top Right (Research) */}
+                        <div className={`${styles.cardFloating} ${styles.cardTopRight} card5`}>
+                            <div className={styles.cardTitle}>Research <br /> Innovation</div>
+                            <p className={styles.cardText}>
+                                Constant development of new peptide sequences for cutting-edge medical research.
+                            </p>
+                        </div>
+
+                        {/* 6th Card: Bottom Left (Support) */}
+                        <div className={`${styles.cardFloating} ${styles.cardBottomLeft} card6`}>
+                            <div className={styles.cardTitle}>Technical <br /> Support</div>
+                            <p className={styles.cardText}>
+                                Expert guidance and consultation for all your research application needs.
                             </p>
                         </div>
                     </div>

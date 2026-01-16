@@ -102,23 +102,49 @@
     box-shadow: 0 20px 50px rgba(0, 0, 0, 0.2);
     width: 300px;
     z-index: 25;
-    text-align: center;
-    top: 50%;
-    transform: translateY(-50%);
     transform-origin: center center;
     /* Ensure zoom is centered */
+    pointer-events: none;
+    /* Avoid interfering with scroll */
 }
 
-/* 2nd Card: Left Center */
-.cardLeft {
-    left: 15%;
-    margin-left: 0;
-}
-
-/* 1st Card: Right Center */
+/* 1st Card: Middle Right */
 .cardRight {
+    top: 30%;
+    right: 10%;
+    left: auto;
+}
+
+/* 2nd Card: Middle Left */
+.cardLeft {
+    top: 50%;
+    left: 10%;
+    right: auto;
+}
+
+/* New card positions - zig-zagging */
+.cardTopLeft {
+    top: 15%;
+    left: 15%;
+    right: auto;
+}
+
+.cardBottomRight {
+    top: 70%;
     right: 15%;
-    margin-left: 0;
+    left: auto;
+}
+
+.cardTopRight {
+    top: 20%;
+    right: 12%;
+    left: auto;
+}
+
+.cardBottomLeft {
+    top: 75%;
+    left: 12%;
+    right: auto;
 }
 
 .cardTitle {
